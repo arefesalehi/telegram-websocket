@@ -56,8 +56,6 @@ A modern **real-time chat application** inspired by Telegram, built with a custo
 | Styling | Tailwind CSS |
 | Backend | Custom Node.js Backend |
 | Realtime | WebSocket (Socket.io or native WS) |
-| Database | MongoDB |
-| Auth | JWT Authentication |
 
 ---
 
