@@ -237,7 +237,7 @@ exports.initConnection = (io) => {
 
 exports.getNamespacesRooms = async (io) => {
   try {
-    const namespaces = await NamespaceModel.find({}).lean();
+    const namespaces = await NamespaceModel.find({}, { href: 1 }).lean();
 
     namespaces.forEach((namespace) => {
       io.of(namespace.href).on("connection", async (socket) => {

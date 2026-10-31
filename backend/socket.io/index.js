@@ -1,6 +1,6 @@
 const { initConnection, getNamespacesRooms } = require("./namespaces.socket");
 
-module.exports = socketHandler = (io) => {
+module.exports = async (io) => {
   initConnection(io);
-  getNamespacesRooms(io);
+  await getNamespacesRooms(io);
 };

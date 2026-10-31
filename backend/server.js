@@ -18,11 +18,11 @@ const connectToDB = async () => {
 };
 
 //* Start app
-const startServer = () => {
+const startServer = async () => {
   const port = process.env.PORT || 4003;
   const httpServer = http.createServer(app);
   const io = socketIoConnection(httpServer);
-  socketHandler(io);
+  await socketHandler(io);
   httpServer.listen(port, () => {
     console.log(`Server running on port ${port}`);
   });
@@ -30,7 +30,7 @@ const startServer = () => {
 
 const run = async () => {
   await connectToDB();
-  startServer();
+  await startServer();
 };
 
 run();
