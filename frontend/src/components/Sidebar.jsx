@@ -1,10 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import SidebarTop from './sidebar/SidebarTop'
 import ChatFolder from './sidebar/ChatFolder'
-import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
-import { API_URL } from '../config'
 
 const Sidebar = ({
   namespaces,
@@ -14,39 +12,12 @@ const Sidebar = ({
   user,
 }) => {
   const { isDark } = useTheme()
-  const [, setUser] = useState({})
-  const navigate = useNavigate()
   const [searchText, setSearchText] = useState('')
 
   const filteredRooms =
     rooms?.filter((room) =>
       room.title.toLowerCase().includes(searchText.toLowerCase()),
     ) || []
-
-  const authUser = async (token) => {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (res.status === 200) {
-      const data = await res.json()
-      setUser({ ...data })
-    } else {
-      navigate('/auth')
-    }
-  }
-
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-
-    if (token) {
-      authUser(token)
-    } else {
-      navigate('/auth')
-    }
-  }, [])
 
   return (
     <div

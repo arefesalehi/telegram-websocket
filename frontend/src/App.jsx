@@ -58,6 +58,9 @@ const App = () => {
   const getNamespacerooms = (namespacehref) => {
     if (namespacesSocket) namespacesSocket.close()
     const nextSocket = io(`${API_URL}${namespacehref}`, { autoConnect: false })
+    nextSocket.on('connect_error', (error) => {
+      console.error('Namespace socket connection failed:', error.message)
+    })
     nextSocket.on('namespaceRooms', (namespaceRooms) => {
       console.log('rooms=>', namespaceRooms)
       setRooms(namespaceRooms)
