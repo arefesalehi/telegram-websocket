@@ -9,8 +9,8 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Auth from './components/Auth'
 import { Routes, Route } from 'react-router-dom'
-const socket = io(API_URL)
-import { Navigate, useNavigate } from 'react-router-dom'
+const socket = io(API_URL, { autoConnect: false })
+import { useNavigate } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import { useTheme } from './contexts/ThemeContext'
 import ChatPage from './components/ChatPage'
@@ -33,11 +33,24 @@ const App = () => {
   const isMobile = window.innerWidth < 640 // breakpoint میتونه تغییر کنه
 
   useEffect(() => {
-    socket.on('namespaces', (namespaces) => {
+    const handleNamespaces = (namespaces) => {
       console.log(namespaces)
+      if (!Array.isArray(namespaces) || namespaces.length === 0) {
+        setNamespaces([])
+        setRooms([])
+        return
+      }
       setNamespaces(namespaces)
       getNamespacerooms(namespaces[0].href)
-    })
+    }
+
+    socket.on('namespaces', handleNamespaces)
+    socket.connect()
+
+    return () => {
+      socket.off('namespaces', handleNamespaces)
+      socket.disconnect()
+    }
   }, [])
 
   // حذف useEffect مربوط به theme چون در Context مدیریت می‌شود
@@ -130,7 +143,7 @@ const App = () => {
       setUser({ ...data })
       console.log('user=>', data)
     } else {
-      Navigate('/auth')
+      navigate('/auth')
     }
   }
 

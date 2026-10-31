@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import SidebarTop from './sidebar/SidebarTop'
 import ChatFolder from './sidebar/ChatFolder'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
 import { API_URL } from '../config'
 
@@ -34,7 +34,7 @@ const Sidebar = ({
       const data = await res.json()
       setUser({ ...data })
     } else {
-      Navigate('/auth')
+      navigate('/auth')
     }
   }
 
