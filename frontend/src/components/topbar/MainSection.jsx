@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
 import { useTheme } from '../../contexts/ThemeContext'
+import { API_URL } from '../../config'
 
 // رفع مشکل آیکون پیش‌فرض در leaflet
 delete L.Icon.Default.prototype._getIconUrl
@@ -128,7 +129,7 @@ const MainSection = ({ roomInfo, user, newMsg }) => {
                 <div className="mx-5 my-2 min-w-0 max-w-[66%] l-auto m">
                   <div className="bg-gray-600 px-2 py-2 rounded-lg break-all whitespace-normal">
                     <img
-                      src={`http://localhost:4003/${media.path}`}
+                      src={`${API_URL}/${media.path}`}
                       alt="newfile"
                       className="w-[90px] h-[90px]"
                     />
@@ -149,7 +150,7 @@ const MainSection = ({ roomInfo, user, newMsg }) => {
                 <div className="mx-5 my-2 mr-auto min-w-0 max-w-[66%]">
                   <div className="bg-gray-400 px-2 py-2 rounded-lg break-all whitespace-normal">
                     <img
-                      src={`http://localhost:4003/${media.path}`}
+                      src={`${API_URL}/${media.path}`}
                       alt="newfile"
                       className="w-[90px] h-[90px]"
                     />

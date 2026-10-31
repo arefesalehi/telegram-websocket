@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./../../public/css/auth.css";
 
 import { useNavigate } from "react-router-dom";
+import { API_URL } from '../config'
 
 function Auth() {
 
@@ -19,7 +20,7 @@ function Auth() {
       phone,
     };
 
-    const res = await fetch("http://localhost:4003/api/auth", {
+    const res = await fetch(`${API_URL}/api/auth`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

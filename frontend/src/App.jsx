@@ -9,11 +9,12 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Auth from './components/Auth'
 import { Routes, Route } from 'react-router-dom'
-const socket = io('http://localhost:4003')
+const socket = io(API_URL)
 import { Navigate, useNavigate } from 'react-router-dom'
 import 'leaflet/dist/leaflet.css'
 import { useTheme } from './contexts/ThemeContext'
 import ChatPage from './components/ChatPage'
+import { API_URL } from './config'
 
 const App = () => {
   const { toggleTheme, isDark } = useTheme()
@@ -43,7 +44,7 @@ const App = () => {
 
   const getNamespacerooms = (namespacehref) => {
     if (namespacesSocket) namespacesSocket.close()
-    setNamespacesSocket(io.connect(`http://localhost:4003${namespacehref}`))
+    setNamespacesSocket(io.connect(`${API_URL}${namespacehref}`))
   }
 
   useEffect(() => {
@@ -118,7 +119,7 @@ const App = () => {
   }
 
   const authUser = async (token) => {
-    const res = await fetch('http://localhost:4003/api/auth/me', {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
       headers: {
         authorization: `Bearer ${token}`,
       },

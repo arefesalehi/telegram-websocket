@@ -4,6 +4,7 @@ import SidebarTop from './sidebar/SidebarTop'
 import ChatFolder from './sidebar/ChatFolder'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useTheme } from '../contexts/ThemeContext'
+import { API_URL } from '../config'
 
 const Sidebar = ({
   namespaces,
@@ -23,7 +24,7 @@ const Sidebar = ({
     ) || []
 
   const authUser = async (token) => {
-    const res = await fetch('http://localhost:4003/api/auth/me', {
+    const res = await fetch(`${API_URL}/api/auth/me`, {
       headers: {
         authorization: `Bearer ${token}`,
       },
