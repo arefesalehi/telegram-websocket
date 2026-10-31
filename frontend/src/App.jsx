@@ -44,23 +44,17 @@ const App = () => {
 
   const getNamespacerooms = (namespacehref) => {
     if (namespacesSocket) namespacesSocket.close()
-    setNamespacesSocket(io.connect(`${API_URL}${namespacehref}`))
-  }
-
-  useEffect(() => {
-    namespacesSocket?.on('namespaceRooms', (namespaceRooms) => {
+    const nextSocket = io(`${API_URL}${namespacehref}`, { autoConnect: false })
+    nextSocket.on('namespaceRooms', (namespaceRooms) => {
       console.log('rooms=>', namespaceRooms)
       setRooms(namespaceRooms)
     })
-  }, [namespacesSocket])
+    setNamespacesSocket(nextSocket)
+    nextSocket.connect()
+  }
 
   const getRoomInfo = (room) => {
-    namespacesSocket.emit('joining', room.title)
-    getOnlineUsersCount()
-    getMsg()
-    confirmIsTyping()
-    getFile()
-    getLocation()
+    if (!namespacesSocket) return
     namespacesSocket.off('roomInfo')
     namespacesSocket.on('roomInfo', (roomInfo) => {
       console.log('roomInfo=>', roomInfo)
@@ -69,6 +63,12 @@ const App = () => {
         navigate(`/chat/${roomInfo._id}`)
       }
     })
+    getOnlineUsersCount()
+    getMsg()
+    confirmIsTyping()
+    getFile()
+    getLocation()
+    namespacesSocket.emit('joining', room.title)
   }
 
   const sendMsg = (message, roomName, sender) => {
