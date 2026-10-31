@@ -2,7 +2,7 @@ const NamespaceModel = require("./../models/Chat");
 
 exports.getAll = async (req, res, next) => {
   try {
-    const namespaces = await NamespaceModel.find({}, { room: 0 });
+    const namespaces = await NamespaceModel.find({}, { rooms: 0 }).lean();
     return res.json(namespaces);
   } catch (err) {
     next(err);

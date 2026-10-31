@@ -223,7 +223,11 @@ const fs = require("fs");
 exports.initConnection = (io) => {
   io.on("connection", async (socket) => {
     try {
-      const namespaces = await NamespaceModel.find({}).sort({ _id: -1 });
+      // The client only needs namespace metadata here. Namespace documents
+      // contain the full chat history, so avoid sending that on initial connect.
+      const namespaces = await NamespaceModel.find({}, { title: 1, href: 1 })
+        .sort({ _id: -1 })
+        .lean();
       socket.emit("namespaces", namespaces);
     } catch (err) {
       console.error("❌ Error fetching namespaces:", err);
