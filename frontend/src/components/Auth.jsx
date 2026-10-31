@@ -31,8 +31,8 @@ function Auth() {
     if (res.status === 200 || res.status === 201) {
       const data = await res.json();
 
-       console.log("AUTH USER:", data);
-   
+      // The app checks this token on the home page before showing the chat.
+      localStorage.setItem('token', data.token)
 
       navigate("/");
    
