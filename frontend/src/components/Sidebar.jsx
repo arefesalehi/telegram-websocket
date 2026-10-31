@@ -14,7 +14,7 @@ const Sidebar = ({
   user,
 }) => {
   const { isDark } = useTheme()
-  const [setUser] = useState({})
+  const [, setUser] = useState({})
   const navigate = useNavigate()
   const [searchText, setSearchText] = useState('')
 
