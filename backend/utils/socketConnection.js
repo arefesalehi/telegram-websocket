@@ -11,6 +11,9 @@ module.exports = (httpServer) => {
       credentials: true,
     },
     transports: ["websocket", "polling"],
+    pingInterval: 25000,
+    pingTimeout: 60000,
+    maxHttpBufferSize: 1e7,
   });
 
   return io;

@@ -1,4 +1,3 @@
-
 import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import L from 'leaflet'
@@ -20,13 +19,14 @@ const MainSection = ({ roomInfo, user, newMsg }) => {
   const [newMessage, setNewMessage] = useState([])
   const messagesEndRef = useRef(null)
   const { isDark } = useTheme()
-  
-useEffect(() => {
-  setNewMessage([])
-}, [roomInfo?._id])
+
+  // با هر roomInfo جدید (عوض شدن روم یا join دوباره) پیام‌های موقت پاک میشن
+  useEffect(() => {
+    setNewMessage([])
+  }, [roomInfo])
 
   useEffect(() => {
-    if (newMsg.message) {
+    if (newMsg?.message) {
       setNewMessage((message) => [...message, newMsg])
     }
   }, [newMsg])
@@ -85,17 +85,16 @@ useEffect(() => {
               <div key={`msg-${index}`} className="flex justify-between w-full">
                 <div className="w-1/3"></div>
                 <div className="mx-5 my-2 min-w-0 max-w-[66%] l-auto m">
-                  <p
+                  <div
                     className={` ${
                       isDark ? ' bg-gray-600' : 'bg-white text-black'
                     } px-2 py-2 rounded-lg break-all whitespace-normal`}
                   >
                     {messageInfo.message}
                     <p className="pt-2 text-xs text-right">
-                      {' '}
                       {formatTime(messageInfo.createdAt)}
                     </p>
-                  </p>
+                  </div>
                 </div>
               </div>
             )
@@ -103,17 +102,16 @@ useEffect(() => {
             return (
               <div key={`msg-${index}`} className="flex justify-between w-full">
                 <div className="mx-5 my-2 mr-auto min-w-0 max-w-[66%]">
-                  <p
+                  <div
                     className={` ${
                       isDark ? 'bg-gray-400' : 'bg-blue-500'
                     } px-2 py-2 rounded-lg break-all whitespace-normal`}
                   >
                     {messageInfo.message}
                     <p className="pt-2 text-xs text-right">
-                      {' '}
                       {formatTime(messageInfo.createdAt)}
                     </p>
-                  </p>
+                  </div>
                 </div>
                 <div className="w-2/3"></div>
               </div>
@@ -138,7 +136,6 @@ useEffect(() => {
                       className="w-[90px] h-[90px]"
                     />
                     <p className="pt-2 text-xs text-right">
-                      {' '}
                       {formatTime(media.createdAt)}
                     </p>
                   </div>
@@ -158,8 +155,7 @@ useEffect(() => {
                       alt="newfile"
                       className="w-[90px] h-[90px]"
                     />
-                      <p className="pt-2 text-xs text-right">
-                      {' '}
+                    <p className="pt-2 text-xs text-right">
                       {formatTime(media.createdAt)}
                     </p>
                   </div>
@@ -186,10 +182,9 @@ useEffect(() => {
                       <p className="mt-1 text-gray-300 text-xs text-center">
                         📍 موقعیت ارسالی
                       </p>
-                        <p className="pt-2 text-xs text-right">
-                      {' '}
-                      {formatTime(location.createdAt)}
-                    </p>
+                      <p className="pt-2 text-xs text-right">
+                        {formatTime(location.createdAt)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -208,10 +203,9 @@ useEffect(() => {
                       <p className="mt-1 text-gray-700 text-xs text-center">
                         📍 موقعیت ارسالی
                       </p>
-                        <p className="pt-2 text-xs text-right">
-                      {' '}
-                      {formatTime(location.createdAt)}
-                    </p>
+                      <p className="pt-2 text-xs text-right">
+                        {formatTime(location.createdAt)}
+                      </p>
                     </div>
                   </div>
                 </div>

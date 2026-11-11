@@ -3,7 +3,7 @@ import './App.css'
 import '../public/css/common.css'
 import '../public/css/style.css'
 import 'leaflet/dist/leaflet.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { io } from 'socket.io-client'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import Sidebar from './components/Sidebar'
@@ -23,7 +23,6 @@ const socket = io(API_URL, {
 const App = () => {
   const { toggleTheme, isDark } = useTheme()
   const [namespaces, setNamespaces] = useState([])
-  const [namespacesSocket, setNamespacesSocket] = useState(null)
   const [rooms, setRooms] = useState([])
   const [roomInfo, setRoomInfo] = useState({})
   const [newMsg, setNewMsg] = useState({})
@@ -33,19 +32,27 @@ const App = () => {
   const [newLocation, setNewLocation] = useState({})
   const [user, setUser] = useState({})
 
+  // سوکت namespace و روم فعلی توی ref نگه داشته میشن تا با هر رندر/ریکانکت قاطی نشن
+  const nsSocketRef = useRef(null)
+  const currentRoomRef = useRef(null)
+
   const navigate = useNavigate()
   const isMobile = window.innerWidth < 640 // breakpoint میتونه تغییر کنه
 
   useEffect(() => {
-    const handleNamespaces = (namespaces) => {
-      console.log(namespaces)
-      if (!Array.isArray(namespaces) || namespaces.length === 0) {
+    const handleNamespaces = (list) => {
+      console.log('namespaces=>', list)
+      if (!Array.isArray(list) || list.length === 0) {
         setNamespaces([])
         setRooms([])
         return
       }
-      setNamespaces(namespaces)
-      getNamespacerooms(namespaces[0].href)
+      // اگه همون لیست قبلیه، state عوض نشه (تب انتخاب‌شده ریست نشه)
+      setNamespaces((prev) =>
+        JSON.stringify(prev) === JSON.stringify(list) ? prev : list,
+      )
+      // فقط اگه هنوز سوکت namespace نداریم وصل شو (با ریکانکت سوکت اصلی دوباره نساز)
+      if (!nsSocketRef.current) getNamespacerooms(list[0].href)
     }
 
     socket.on('connect_error', (error) => {
@@ -58,93 +65,81 @@ const App = () => {
       socket.off('namespaces', handleNamespaces)
       socket.off('connect_error')
       socket.disconnect()
+      if (nsSocketRef.current) {
+        nsSocketRef.current.removeAllListeners()
+        nsSocketRef.current.close()
+        nsSocketRef.current = null
+      }
     }
   }, [])
 
   const getNamespacerooms = (namespacehref) => {
-    if (namespacesSocket) namespacesSocket.close()
-    const nextSocket = io(`${API_URL}${namespacehref}`, {
+    if (nsSocketRef.current) {
+      nsSocketRef.current.removeAllListeners()
+      nsSocketRef.current.close()
+    }
+    currentRoomRef.current = null
+    setRoomInfo({})
+
+    const s = io(`${API_URL}${namespacehref}`, {
       autoConnect: false,
       transports: ['websocket'],
     })
-    nextSocket.on('connect_error', (error) => {
+
+    s.on('connect_error', (error) => {
       console.error('Namespace socket connection failed:', error.message)
     })
-    nextSocket.on('namespaceRooms', (namespaceRooms) => {
+
+    // بعد از هر ریکانکت، سرور عضویت توی روم رو فراموش می‌کنه؛ دوباره join کن
+    s.on('connect', () => {
+      console.log('namespace socket connected')
+      if (currentRoomRef.current) s.emit('joining', currentRoomRef.current)
+    })
+    s.on('disconnect', (reason) => console.warn('namespace socket disconnected:', reason))
+
+    s.on('namespaceRooms', (namespaceRooms) => {
       console.log('rooms=>', namespaceRooms)
       setRooms(namespaceRooms)
     })
-    setNamespacesSocket(nextSocket)
-    nextSocket.connect()
+    s.on('roomInfo', (info) => {
+      console.log('roomInfo=>', info)
+      setRoomInfo(info)
+      if (isMobile && !window.location.pathname.startsWith('/chat')) {
+        navigate(`/chat/${info._id}`)
+      }
+    })
+    s.on('onlineUsersCount', (count) => setOnlineUsersCount(count))
+    s.on('confirmMsg', (data) => setNewMsg(data))
+    s.on('isTyping', (data) => setIsTypingInfo(data))
+    s.on('confirmMedia', (data) => setNewFile(data))
+    s.on('confirmLocation', (data) => setNewLocation(data))
+
+    nsSocketRef.current = s
+    s.connect()
   }
 
-const getRoomInfo = (room) => {
-  console.log('click room:', room.title, 'connected:', namespacesSocket?.connected)
-  if (!namespacesSocket) return
-
-  ;['roomInfo', 'onlineUsersCount', 'confirmMsg', 'isTyping', 'confirmMedia', 'confirmLocation']
-    .forEach((evt) => namespacesSocket.off(evt))
-
-  namespacesSocket.on('roomInfo', (roomInfo) => {
-    console.log('roomInfo=>', roomInfo)
-    setRoomInfo(roomInfo)
-    if (isMobile) {
-      navigate(`/chat/${roomInfo._id}`)
-    }
-  })
-  getOnlineUsersCount()
-  getMsg()
-  confirmIsTyping()
-  getFile()
-  getLocation()
-  namespacesSocket.emit('joining', room.title)
-}
+  const getRoomInfo = (room) => {
+    console.log('click room:', room.title, 'connected:', nsSocketRef.current?.connected)
+    if (!nsSocketRef.current) return
+    currentRoomRef.current = room.title
+    setNewMsg({})
+    nsSocketRef.current.emit('joining', room.title)
+  }
 
   const sendMsg = (message, roomName, sender) => {
-    namespacesSocket.emit('newMsg', { message, roomName, sender })
-  }
-
-  const getMsg = () => {
-    namespacesSocket.on('confirmMsg', (data) => setNewMsg(data))
-  }
-
-  const getOnlineUsersCount = () => {
-    namespacesSocket.on('onlineUsersCount', (count) =>
-      setOnlineUsersCount(count),
-    )
+    nsSocketRef.current?.emit('newMsg', { message, roomName, sender })
   }
 
   const detectIsTyping = (userID, roomName, isTyping) => {
-    namespacesSocket?.emit('isTyping', { userID, roomName, isTyping })
-  }
-
-  const confirmIsTyping = () => {
-    if (namespacesSocket) {
-      namespacesSocket.on('isTyping', (data) => {
-        setIsTypingInfo(data)
-        console.log('isTyping==>', data)
-      })
-    }
+    nsSocketRef.current?.emit('isTyping', { userID, roomName, isTyping })
   }
 
   const sendFile = (sender, roomName, file, filename) => {
-    namespacesSocket.emit('newMedia', { sender, roomName, file, filename })
-  }
-
-  const getFile = () => {
-    namespacesSocket.on('confirmMedia', (data) => {
-      setNewFile(data)
-    })
+    nsSocketRef.current?.emit('newMedia', { sender, roomName, file, filename })
   }
 
   const sendLocation = (roomName, sender, location) => {
-    namespacesSocket.emit('newLocation', { roomName, sender, location })
-  }
-
-  const getLocation = () => {
-    namespacesSocket.on('confirmLocation', (data) => {
-      setNewLocation(data)
-    })
+    nsSocketRef.current?.emit('newLocation', { roomName, sender, location })
   }
 
   const authUser = async (token) => {
