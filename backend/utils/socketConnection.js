@@ -3,19 +3,15 @@ const socketIo = require("socket.io");
 module.exports = (httpServer) => {
   const io = socketIo(httpServer, {
     cors: {
-      origin: "*",
+      origin: [
+        "https://telegram-frontend-phi.vercel.app",
+        "http://localhost:5173",
+      ],
+      methods: ["GET", "POST"],
+      credentials: true,
     },
+    transports: ["websocket", "polling"],
   });
-
-  // io.use((socket, next) => {
-  //   // socket , Token , ...
-
-  //   if (!token) {
-  //   } else {
-  //     // Codes
-  //     next();
-  //   }
-  // });
 
   return io;
 };

@@ -35,8 +35,3 @@ const run = async () => {
 
 run();
 
-
-   const cors = require('cors');
-   app.use(cors({
-     origin: 'https://telegram-frontend-phi.vercel.app/'
-   }));

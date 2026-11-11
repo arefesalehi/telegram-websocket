@@ -2,19 +2,23 @@
 import './App.css'
 import '../public/css/common.css'
 import '../public/css/style.css'
-import Sidebar from '../../frontend/src/components/Sidebar'
-import Topbar from '../src/components/Topbar'
-import CloseBox from '../src/components/CloseBox'
+import 'leaflet/dist/leaflet.css'
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
+import { Routes, Route, useNavigate } from 'react-router-dom'
+import Sidebar from './components/Sidebar'
+import Topbar from './components/Topbar'
+import CloseBox from './components/CloseBox'
 import Auth from './components/Auth'
-import { Routes, Route } from 'react-router-dom'
-const socket = io(API_URL, { autoConnect: false })
-import { useNavigate } from 'react-router-dom'
-import 'leaflet/dist/leaflet.css'
-import { useTheme } from './contexts/ThemeContext'
 import ChatPage from './components/ChatPage'
+import { useTheme } from './contexts/ThemeContext'
 import { API_URL } from './config'
+
+// سوکت اصلی: فقط websocket (polling روی Render خطا می‌داد)
+const socket = io(API_URL, {
+  autoConnect: false,
+  transports: ['websocket'],
+})
 
 const App = () => {
   const { toggleTheme, isDark } = useTheme()
@@ -44,20 +48,25 @@ const App = () => {
       getNamespacerooms(namespaces[0].href)
     }
 
+    socket.on('connect_error', (error) => {
+      console.error('Main socket connection failed:', error.message)
+    })
     socket.on('namespaces', handleNamespaces)
     socket.connect()
 
     return () => {
       socket.off('namespaces', handleNamespaces)
+      socket.off('connect_error')
       socket.disconnect()
     }
   }, [])
 
-  // حذف useEffect مربوط به theme چون در Context مدیریت می‌شود
-
   const getNamespacerooms = (namespacehref) => {
     if (namespacesSocket) namespacesSocket.close()
-    const nextSocket = io(`${API_URL}${namespacehref}`, { autoConnect: false })
+    const nextSocket = io(`${API_URL}${namespacehref}`, {
+      autoConnect: false,
+      transports: ['websocket'],
+    })
     nextSocket.on('connect_error', (error) => {
       console.error('Namespace socket connection failed:', error.message)
     })
@@ -135,17 +144,23 @@ const App = () => {
   }
 
   const authUser = async (token) => {
-    const res = await fetch(`${API_URL}/api/auth/me`, {
-      headers: {
-        authorization: `Bearer ${token}`,
-      },
-    })
+    try {
+      const res = await fetch(`${API_URL}/api/auth/me`, {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store',
+      })
 
-    if (res.status === 200) {
-      const data = await res.json()
-      setUser({ ...data })
-      console.log('user=>', data)
-    } else {
+      if (res.ok) {
+        const data = await res.json()
+        setUser({ ...data })
+        console.log('user=>', data)
+      } else {
+        navigate('/auth')
+      }
+    } catch (err) {
+      console.error('authUser failed:', err)
       navigate('/auth')
     }
   }
@@ -180,7 +195,11 @@ const App = () => {
             <CloseBox />
           </div>
 
-          <div className={`flex flex-row  w-full h-[96%] ${isDark ? 'bg-gray-800' : 'bg-gray-200'}`}>
+          <div
+            className={`flex flex-row  w-full h-[96%] ${
+              isDark ? 'bg-gray-800' : 'bg-gray-200'
+            }`}
+          >
             <Routes>
               <Route
                 path="/"
@@ -248,13 +267,10 @@ const App = () => {
         aria-label="Toggle theme"
       >
         {isDark ? (
-          // آیکون خورشید برای حالت دارک
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
           </svg>
         ) : (
-          // آیکون ماه برای حالت لایت
-
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
             <path
               fillRule="evenodd"
