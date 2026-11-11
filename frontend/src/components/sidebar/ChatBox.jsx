@@ -18,17 +18,17 @@ const ChatBox = ({ room, getRoomInfo }) => {
 
   // شمارش کل پیام‌ها (متن + عکس + لوکیشن)
   const totalCount =
-    (room.messages?.length || 0) +
-    (room.medias?.length || 0) +
-    (room.locations?.length || 0)
+    (room.messageCount ?? room.messages?.length ?? 0) +
+    (room.mediaCount ?? room.medias?.length ?? 0) +
+    (room.locationCount ?? room.locations?.length ?? 0)
 
   // گرفتن آخرین پیام واقعی
   const getLastMessageObj = () => {
     const combined = [
-      ...(room.messages || []),
-      ...(room.medias || []),
-      ...(room.locations || [])
-    ]
+      room.lastMessage || room.messages?.at(-1),
+      room.lastMedia || room.medias?.at(-1),
+      room.lastLocation || room.locations?.at(-1),
+    ].filter(Boolean)
 
     if (!combined.length) return null
 

@@ -240,34 +240,63 @@ exports.getNamespacesRooms = async (io) => {
     const namespaces = await NamespaceModel.find({}, { href: 1 }).lean();
 
     namespaces.forEach((namespace) => {
-      io.of(namespace.href).on("connection", async (socket) => {
+      io.of(namespace.href).on("connection", (socket) => {
         try {
-          let mainNamespace = await NamespaceModel.findOne({ _id: namespace._id });
-          if (!mainNamespace) return;
-
           getMessage(io, socket);
           getLocation(io, socket);
           getMedia(io, socket);
 
-          socket.emit("namespaceRooms", mainNamespace.rooms);
+          NamespaceModel.aggregate([
+            { $match: { _id: namespace._id } },
+            { $unwind: "$rooms" },
+            {
+              $project: {
+                _id: "$rooms._id",
+                title: "$rooms.title",
+                image: "$rooms.image",
+                messageCount: {
+                  $size: { $ifNull: ["$rooms.messages", []] },
+                },
+                mediaCount: {
+                  $size: { $ifNull: ["$rooms.medias", []] },
+                },
+                locationCount: {
+                  $size: { $ifNull: ["$rooms.locations", []] },
+                },
+                lastMessage: {
+                  $arrayElemAt: [{ $ifNull: ["$rooms.messages", []] }, -1],
+                },
+                lastMedia: {
+                  $arrayElemAt: [{ $ifNull: ["$rooms.medias", []] }, -1],
+                },
+                lastLocation: {
+                  $arrayElemAt: [{ $ifNull: ["$rooms.locations", []] }, -1],
+                },
+              },
+            },
+          ])
+            .then((roomSummaries) => socket.emit("namespaceRooms", roomSummaries))
+            .catch((err) => console.error("❌ Error fetching room summaries:", err));
 
           socket.on("joining", async (newRoom) => {
             try {
               const lastRoom = Array.from(socket.rooms)[1];
-              mainNamespace = await NamespaceModel.findOne({ _id: namespace._id });
-              if (!mainNamespace) return;
 
               if (lastRoom) {
                 socket.leave(lastRoom);
-                await getRoomOnlineUsers(io, mainNamespace.href, lastRoom);
+                await getRoomOnlineUsers(io, namespace.href, lastRoom);
               }
 
               socket.join(newRoom);
-              await getRoomOnlineUsers(io, mainNamespace.href, newRoom);
+              await getRoomOnlineUsers(io, namespace.href, newRoom);
 
-              const roomInfo = mainNamespace.rooms.find(
-                (room) => room.title === newRoom
-              );
+              const rooms = await NamespaceModel.aggregate([
+                { $match: { _id: namespace._id } },
+                { $unwind: "$rooms" },
+                { $match: { "rooms.title": newRoom } },
+                { $replaceRoot: { newRoot: "$rooms" } },
+              ]);
+              const roomInfo = rooms[0];
 
               if (!roomInfo) {
                 console.error("❌ Room not found in namespace:", newRoom);
@@ -277,7 +306,7 @@ exports.getNamespacesRooms = async (io) => {
               socket.emit("roomInfo", roomInfo);
 
               socket.on("disconnect", async () => {
-                await getRoomOnlineUsers(io, mainNamespace.href, newRoom);
+                await getRoomOnlineUsers(io, namespace.href, newRoom);
               });
             } catch (err) {
               console.error("🔥 Error in joining handler:", err);
