@@ -78,23 +78,27 @@ const App = () => {
     nextSocket.connect()
   }
 
-  const getRoomInfo = (room) => {
-    if (!namespacesSocket) return
-    namespacesSocket.off('roomInfo')
-    namespacesSocket.on('roomInfo', (roomInfo) => {
-      console.log('roomInfo=>', roomInfo)
-      setRoomInfo(roomInfo)
-      if (isMobile) {
-        navigate(`/chat/${roomInfo._id}`)
-      }
-    })
-    getOnlineUsersCount()
-    getMsg()
-    confirmIsTyping()
-    getFile()
-    getLocation()
-    namespacesSocket.emit('joining', room.title)
-  }
+const getRoomInfo = (room) => {
+  console.log('click room:', room.title, 'connected:', namespacesSocket?.connected)
+  if (!namespacesSocket) return
+
+  ;['roomInfo', 'onlineUsersCount', 'confirmMsg', 'isTyping', 'confirmMedia', 'confirmLocation']
+    .forEach((evt) => namespacesSocket.off(evt))
+
+  namespacesSocket.on('roomInfo', (roomInfo) => {
+    console.log('roomInfo=>', roomInfo)
+    setRoomInfo(roomInfo)
+    if (isMobile) {
+      navigate(`/chat/${roomInfo._id}`)
+    }
+  })
+  getOnlineUsersCount()
+  getMsg()
+  confirmIsTyping()
+  getFile()
+  getLocation()
+  namespacesSocket.emit('joining', room.title)
+}
 
   const sendMsg = (message, roomName, sender) => {
     namespacesSocket.emit('newMsg', { message, roomName, sender })

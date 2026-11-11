@@ -20,6 +20,10 @@ const MainSection = ({ roomInfo, user, newMsg }) => {
   const [newMessage, setNewMessage] = useState([])
   const messagesEndRef = useRef(null)
   const { isDark } = useTheme()
+  
+useEffect(() => {
+  setNewMessage([])
+}, [roomInfo?._id])
 
   useEffect(() => {
     if (newMsg.message) {
